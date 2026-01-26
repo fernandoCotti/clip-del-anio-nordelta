@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getRoundName } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export default async function RoundsPage() {
   // Find active tournament
   const tournament = await prisma.tournament.findFirst({

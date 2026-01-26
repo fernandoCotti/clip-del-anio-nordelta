@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { BracketView } from '@/components/BracketView';
 
+export const dynamic = 'force-dynamic';
+
 export default async function BracketPage() {
   const tournament = await prisma.tournament.findFirst({
     where: { isActive: true },
