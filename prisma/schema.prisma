@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tournament {
+  id          String   @id @default(cuid())
+  name        String
+  year        Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(false)
+  currentRound Int     @default(1) // 1=64, 2=32, 3=16, 4=8, 5=4, 6=Final(2)
+  videos      Video[]
+  matches     Match[]
+}
+
+model Video {
+  id          String   @id @default(cuid())
+  tournamentId String
+  tournament  Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  title       String
+  embedUrl    String   // YouTube/Vimeo embed URL
+  createdAt   DateTime @default(now())
+  matches     MatchVideo[]
+}
+
+model Match {
+  id            String   @id @default(cuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  round         Int      // 1=64, 2=32, 3=16, 4=8, 5=4, 6=Final(2)
+  matchNumber   Int      // Position in the round (1, 2, 3, ...)
+  isOpen        Boolean  @default(false)
+  isComplete    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  videos        MatchVideo[]
+  votes         Vote[]
+  winnerId      String?  // ID of the winning video
+}
+
+model MatchVideo {
+  id        String @id @default(cuid())
+  matchId   String
+  match     Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  videoId   String
+  video     Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  position  Int    // 0 or 1 (left/right in matchup)
+
+  @@unique([matchId, position])
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  videoId     String   // The video the user voted for
+  sessionId   String   // Anonymous session identifier (cookie-based)
+  createdAt   DateTime @default(now())
+
+  @@unique([matchId, sessionId]) // One vote per match per session
+  @@index([matchId])
+  @@index([sessionId])
+}
