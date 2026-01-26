@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { getRoundName } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get('sessionId')?.value;

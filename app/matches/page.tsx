@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import { MatchesList } from '@/components/MatchesList';
 import { getRoundName } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MatchesPage() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get('sessionId')?.value;
