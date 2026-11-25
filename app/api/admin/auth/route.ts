@@ -1,27 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_SESSION_MAX_AGE,
+  createAdminSessionToken,
+  isAdminAuthenticated,
+  verifyAdminPassword,
+} from '@/lib/admin-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    if (!process.env.ADMIN_PASSWORD) {
+      console.error('ADMIN_PASSWORD is not set; admin login is disabled.');
+      return NextResponse.json(
+        { error: 'Admin login is not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { password } = body;
 
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
-
-    if (password !== adminPassword) {
+    if (!verifyAdminPassword(password)) {
       return NextResponse.json(
         { error: 'Invalid password' },
         { status: 401 }
       );
     }
 
-    // Set admin session cookie
+    // Set a signed, expiring admin session cookie
     const cookieStore = await cookies();
-    cookieStore.set('adminSession', 'authenticated', {
+    cookieStore.set(ADMIN_COOKIE_NAME, createAdminSessionToken(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: ADMIN_SESSION_MAX_AGE,
     });
 
     return NextResponse.json({ success: true });
@@ -34,10 +47,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const cookieStore = await cookies();
-  const adminSession = cookieStore.get('adminSession');
-
   return NextResponse.json({
-    authenticated: adminSession?.value === 'authenticated',
+    authenticated: await isAdminAuthenticated(),
   });
 }
